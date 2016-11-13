@@ -13,13 +13,15 @@
  * running on a Raspberry Pi that is connected to an Arduino.
  */
 
-using namespace std;
-
 #include <iostream>
 #include <cstring>
 #include <vector>
 #include <list>
 #include <sys/time.h>
+
+#include "/home/pi/raspicam-0.1.3/src/raspicam_cv.h"
+
+using namespace std;
 
 const string usage = "\n"
   "Usage:\n"
@@ -145,7 +147,7 @@ class Demo {
 
   list<string> m_imgNames;
 
-  cv::VideoCapture m_cap;
+  raspicam::RaspiCam_Cv m_cap;
 
   int m_exposure;
   int m_gain;
@@ -326,16 +328,13 @@ public:
       v4l2_set_control(device, V4L2_CID_BRIGHTNESS, m_brightness*256);
     }
     v4l2_close(device);
-#endif 
+#endif
 
     // find and open a USB camera (built in laptop camera, web cam etc)
-    m_cap = cv::VideoCapture(m_deviceId);
-        if(!m_cap.isOpened()) {
-      cerr << "ERROR: Can't find video device " << m_deviceId << "\n";
+    if (!m_cap.open()) {
+      cerr << "ERROR: Can't open Raspberry Pi camera\n";
       exit(1);
     }
-    m_cap.set(CV_CAP_PROP_FRAME_WIDTH, m_width);
-    m_cap.set(CV_CAP_PROP_FRAME_HEIGHT, m_height);
     cout << "Camera successfully opened (ignore error messages above...)" << endl;
     cout << "Actual resolution: "
          << m_cap.get(CV_CAP_PROP_FRAME_WIDTH) << "x"
@@ -468,7 +467,8 @@ public:
     while (true) {
 
       // capture frame
-      m_cap >> image;
+      m_cap.grab();
+      m_cap.retrieve(image);
 
       processImage(image, image_gray);
 
@@ -483,6 +483,8 @@ public:
       // exit if any key is pressed
       if (cv::waitKey(1) >= 0) break;
     }
+
+    m_cap.release();
   }
 
 }; // Demo

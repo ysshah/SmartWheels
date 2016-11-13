@@ -12,8 +12,10 @@ include_directories(AprilTags . /opt/local/include)
 add_library(apriltags ${SOURCE_FILES})
 
 find_package(OpenCV)
+find_package(raspicam REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 target_link_libraries(apriltags ${OpenCV_LIBS}) #-pg) #-fopenmp)
+target_link_libraries(apriltags ${raspicam_CV_LIBS})
 pods_use_pkg_config_packages(apriltags eigen3)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
