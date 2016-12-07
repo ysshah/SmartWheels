@@ -12,6 +12,7 @@ include_directories(AprilTags . /opt/local/include)
 add_library(apriltags ${SOURCE_FILES})
 
 find_package(OpenCV)
+set(raspicam_DIR "~/raspicam-0.1.3/build")
 find_package(raspicam REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 target_link_libraries(apriltags ${OpenCV_LIBS}) #-pg) #-fopenmp)
