@@ -1,2 +1,5 @@
 build/
 pod-build/
+*#*
+*.pro
+*.job
