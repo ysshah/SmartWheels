@@ -2,12 +2,12 @@
 
 ## Set up the Raspberry Pi
 
-1. Download Raspbian Jessie from [here](https://www.raspberrypi.org/downloads/raspbian/)
-2. Mount the image onto an SD card using these [instructions](https://www.raspberrypi.org/documentation/installation/installing-images/)
-3. Follow the on-screen instructions to set up Raspberry Pi
-4. Run `sudo raspi-config` and set locale, timezone, keyboard (GB => US)
-5. Update packages with `sudo apt-get update` followed by `sudo apt-get upgrade`
-6. Install git with `sudo apt-get install git`
+1. Download Raspbian Jessie from [here](https://www.raspberrypi.org/downloads/raspbian/).
+2. Mount the image onto an SD card using these [instructions](https://www.raspberrypi.org/documentation/installation/installing-images/).
+3. Follow the on-screen instructions to set up Raspberry Pi.
+4. Run `sudo raspi-config` and set locale, timezone, keyboard (GB => US).
+5. Update packages with `sudo apt-get update` followed by `sudo apt-get upgrade`.
+6. Install git with `sudo apt-get install git`.
 
 ## R-NET Setup
 
@@ -48,9 +48,25 @@ Boot with everything connected and run
 python3 JoyLocal.py
 ```
 
-## AprilTags Setup
+## SSH to Raspberry Pi
 
-### RaspiCam
+1. Connect the computer to a WiFi network. Since CalVisitor doesn't support local SSH and AirBears2 is difficult to set up on the Raspberry Pi, we use enable a Personal Hotspot on an iPhone (Settings > Personal Hotspot) to use as our local WiFi network.
+2. Connect Raspberry Pi to the same WiFi network using these [instructions](https://www.raspberrypi.org/documentation/configuration/wireless/wireless-cli.md).
+3. SSH using these [instructions](https://www.raspberrypi.org/documentation/remote-access/ssh/unix.md).
+4. (Optional) Set up a permanent IP address for the Raspberry Pi using either this [link](https://www.modmypi.com/blog/how-to-give-your-raspberry-pi-a-static-ip-address-update) or the second comment in this [link](https://www.modmypi.com/blog/tutorial-how-to-give-your-raspberry-pi-a-static-ip-address). Not sure which one did the trick.
+5. (Optional) Enable password-less SSH by copying the contents of the computer's id_rsa.pub file to the Raspberry Pi's ~/.ssh/authorized_keys file.
+
+## AprilTags on iPhone to Raspberry Pi
+
+1. Download the [AprilTag application](https://itunes.apple.com/us/app/apriltag/id736108128) on the iPhone.
+2. Tap the yellow text on the top left corner to go to settings, enter the Raspberry Pi's IP address into the "UDP Transmit Addr" field, and turn on the "UDP Transmit Enabled" switch.
+3. Receive the UDP packets on port 7709 according to the [AprilTags wiki](https://april.eecs.umich.edu/wiki/AprilTags). See their example decoder written in Java [here](https://april.eecs.umich.edu/apriltag/AprilTagReceive.java).
+
+## Discontinued Instructions
+
+### AprilTags on Raspberry Pi
+
+#### RaspiCam
 
 Install OpenCV so that RaspiCam compiles with OpenCV compatibility
 ```
@@ -77,7 +93,7 @@ sudo make install
 sudo ldconfig
 ```
 
-### AprilTags
+#### AprilTags
 
 Following these [instructions](http://people.csail.mit.edu/kaess/apriltags/)...
 
@@ -98,6 +114,6 @@ make
 ./build/bin/apriltags_demo
 ```
 
-## Installing OpenCV and Python
+### Installing OpenCV and Python
 
 Follow [this OpenCV guide](http://www.pyimagesearch.com/2016/04/18/install-guide-raspberry-pi-3-raspbian-jessie-opencv-3/) and then [this Python with camera guide](http://www.pyimagesearch.com/2015/03/30/accessing-the-raspberry-pi-camera-with-opencv-and-python/).
