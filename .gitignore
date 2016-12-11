@@ -3,3 +3,4 @@ pod-build/
 *#*
 *.pro
 *.job
+*.DS_Store
