@@ -139,11 +139,10 @@ if __name__ == "__main__":
     # Set chair's speed to the lowest setting
     setSpeedRange(can_socket, 0)
 
-    rnet_joystick_frame_raw = build_frame(rnet_joystick_id + "#0000")
-
-    # if len(sys.argv) == 3:
+    # if len(sys.argv) == 4:
+    #     rnet_joystick_frame_raw = build_frame(rnet_joystick_id + "#0000")
     #     numSent = 0
-    #     count = 300
+    #     count = int(sys.argv[3])
     #     while numSent < count:
     #         cf, addr = can_socket.recvfrom(16)
     #         if cf == rnet_joystick_frame_raw:
