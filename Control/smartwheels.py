@@ -3,8 +3,9 @@ import threading
 import termios
 import tty
 import select
-from time import time
+import time
 import RPi.GPIO as GPIO
+
 from can2RNET import *
 
 
@@ -23,8 +24,8 @@ def getRNETjoystickFrameID(can_socket):
     """
     ready = select.select([can_socket], [], [], 1.0)
     if ready[0]:
-        start = time()
-        while (time() - start) < 1:
+        start = time.time()
+        while (time.time() - start) < 1:
             cf, addr = can_socket.recvfrom(16)
             frameid = dissect_frame(cf).split('#')[0]
             if frameid[:3] == '020':
@@ -54,7 +55,6 @@ def inject_rnet_joystick_frame(can_socket, rnet_joystick_id):
 def initializeUltrasonicSensors(gpio_in, gpio_out):
     GPIO.setup(gpio_out,GPIO.OUT)
     GPIO.setup(gpio_in,GPIO.IN)
-
     GPIO.output(gpio_out, False)
     print("Waiting For Sensor To Settle")
     time.sleep(1)
