@@ -4,7 +4,16 @@ import termios
 import tty
 import select
 from time import time
+import RPi.GPIO as GPIO
 from can2RNET import *
+
+
+TRIG1 = 22 #output
+ECHO1 = 27 #input
+TRIG2 = 6  #output
+ECHO2 = 13 #input
+TRIG3 = 24 #output
+ECHO3 = 23 #input
 
 
 def getRNETjoystickFrameID(can_socket):
@@ -40,6 +49,45 @@ def inject_rnet_joystick_frame(can_socket, rnet_joystick_id):
         if cf == rnet_joystick_frame_raw:
             cansend(can_socket, '{}#{:02x}{:02x}'.format(
                 rnet_joystick_id, joystick_x, joystick_y))
+
+
+def initializeUltrasonicSensors(gpio_in, gpio_out):
+    GPIO.setup(gpio_out,GPIO.OUT)
+    GPIO.setup(gpio_in,GPIO.IN)
+
+    GPIO.output(gpio_out, False)
+    print("Waiting For Sensor To Settle")
+    time.sleep(1)
+
+
+def getDistance(gpio_in, gpio_out, ultrasound):
+    global distance1
+    global distance2
+    global distance3
+    GPIO.output(gpio_out, True)
+    time.sleep(0.00001)
+    GPIO.output(gpio_out, False)
+    while GPIO.input(gpio_in)==0:
+        pulse_start = time.time()
+
+    while GPIO.input(gpio_in)==1:
+        pulse_end = time.time()
+
+    pulse_duration = pulse_end - pulse_start
+    distance = pulse_duration * 17150
+
+    distance = round(distance, 2)
+    if (ultrasound == 1):
+        distance1 = round(distance, 2)
+        #print("Distance1: " + str(distance1))
+    elif (ultrasound == 2):
+        distance2 = round(distance, 2)
+        #print("Distance2: " + str(distance2))
+    elif (ultrasound == 3):
+        distance3 = round(distance, 2)
+
+    #print("Sensor" + str(ultrasound) + "Distance: " +  ":" + str(distance) + " cm",)
+    time.sleep(0.1)
 
 
 def control():
@@ -126,10 +174,18 @@ def manualOverride():
 if __name__ == "__main__":
     global joystick_x
     global joystick_y
+    global distance1
+    global distance2
+    global distance3
     global rnet_threads_running
     joystick_x = 0
     joystick_y = 0
+    distance1 = 0
+    distance2 = 0
+    distance3 = 0
     rnet_threads_running = True
+
+    GPIO.setmode(GPIO.BCM)
 
     can_socket = opencansocket(0)
 
