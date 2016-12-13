@@ -166,7 +166,7 @@ def manualOverride():
             rnet_threads_running = False
             break
         char = ''
-        sleep(0.2)
+        time.sleep(0.2)
         joystick_x = 0
         joystick_y = 0
 
@@ -227,4 +227,4 @@ if __name__ == "__main__":
     control_thread.start()
 
     while rnet_threads_running:
-        sleep(0.5)
+        time.sleep(0.5)

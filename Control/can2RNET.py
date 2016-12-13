@@ -4,7 +4,7 @@
 import socket
 import struct
 import sys
-from time import *
+import time
 import binascii #used in build_frame
 import threading
 
@@ -31,7 +31,7 @@ def build_frame(canstr):
     lcanid=len(cansplit[0])
     RTR='#R' in canstr
     if lcanid == 3:
-        canid=struct.pack('I',int(cansplit[0],16)+0x40000000*RTR)        
+        canid=struct.pack('I',int(cansplit[0],16)+0x40000000*RTR)
     elif lcanid == 8:
         canid=struct.pack('I',int(cansplit[0],16)+0x80000000+0x40000000*RTR)
     else:
@@ -40,7 +40,7 @@ def build_frame(canstr):
     can_dlc = 0
     len_datstr = len(cansplit[1])
     if not RTR and len_datstr<=16 and not len_datstr & 1:
-        candat = binascii.unhexlify(cansplit[1]) 
+        candat = binascii.unhexlify(cansplit[1])
         can_dlc = len(candat)
         candat = candat.ljust(8,b'\x00')
     elif not len_datstr or RTR:
@@ -79,13 +79,13 @@ def canrepeat_stop(thread):
 
 def canrepeatThread(s,cansendtxt,interval):
     interval /= 1000
-    nexttime = time() + interval
+    nexttime = time.time() + interval
     socketcanframe = build_frame(cansendtxt)
     while not threading.currentThread()._stop:
         s.send(socketcanframe)
         nexttime += interval
-        if (nexttime > time()):
-            sleep(nexttime - time())
+        if (nexttime > time.time()):
+            time.sleep(nexttime - time.time())
     print(str(threading.currentThread())+' stopped')
 
 def canrepeat(s,cansendtxt,interval): #interval in ms
