@@ -186,6 +186,9 @@ if __name__ == "__main__":
     rnet_threads_running = True
 
     GPIO.setmode(GPIO.BCM)
+    initializeUltrasonicSensors(ECHO1, TRIG1)
+    initializeUltrasonicSensors(ECHO2, TRIG2)
+    initializeUltrasonicSensors(ECHO3, TRIG3)
 
     can_socket = opencansocket(0)
 
