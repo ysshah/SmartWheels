@@ -8,9 +8,8 @@ import RPi.GPIO as GPIO
 
 from can2RNET import *
 
-
-TRIG1 = 22 #output
-ECHO1 = 27 #input
+TRIG1 = 27 #output
+ECHO1 = 17 #input
 TRIG2 = 6  #output
 ECHO2 = 13 #input
 TRIG3 = 24 #output
@@ -89,6 +88,16 @@ def getDistance(gpio_in, gpio_out, ultrasound):
     #print("Sensor" + str(ultrasound) + "Distance: " +  ":" + str(distance) + " cm",)
     time.sleep(0.1)
 
+def getDistances():
+    print("getDistances")
+    getDistance(ECHO1, TRIG1, 1)
+    print("Distance1: " + str(distance1))
+
+def stopWheelchair():
+   global joystick_x
+   global joystick_y
+   joystick_x = 0
+   joystick_y = 0
 
 def control():
     global joystick_x
@@ -96,7 +105,7 @@ def control():
 
     resolution = (1920, 1080)
     x_center = resolution[0] / 2
-    x_scale = resolution[0] / 2
+    x_scale = resolution[1] / 2
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # Raspberry Pi IP address, AprilTags UDP port
@@ -105,6 +114,7 @@ def control():
         data, addr = sock.recvfrom(1024)
         if len(data) == 24:
             print('No tags')
+            stopWheelchair()
         elif len(data) == 112:
             d = struct.unpack('!8i20f', data)
 
@@ -128,8 +138,7 @@ def control():
                     joystick_x = 255 - int((x_center - x) * (80 / x_scale))
             elif size < 400:
                 print('stopping')
-                joystick_x = 0
-                joystick_y = 0
+                stopWheelchair()
             else:
                 print('going backwards')
                 joystick_y = 255 - 50
@@ -151,6 +160,7 @@ def manualOverride():
         return ch
 
     while True:
+#        getDistances()
         char = getch()
         if char == 'w':
             joystick_y = 127
@@ -187,8 +197,8 @@ if __name__ == "__main__":
 
     GPIO.setmode(GPIO.BCM)
     initializeUltrasonicSensors(ECHO1, TRIG1)
-    initializeUltrasonicSensors(ECHO2, TRIG2)
-    initializeUltrasonicSensors(ECHO3, TRIG3)
+    #initializeUltrasonicSensors(ECHO2, TRIG2)
+    #initializeUltrasonicSensors(ECHO3, TRIG3)
 
     can_socket = opencansocket(0)
 
