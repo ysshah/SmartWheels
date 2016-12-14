@@ -11,9 +11,9 @@ from can2RNET import *
 TRIG1 = 27 #output
 ECHO1 = 17 #input
 TRIG2 = 6  #output
-ECHO2 = 13 #input
-TRIG3 = 24 #output
-ECHO3 = 23 #input
+ECHO2 = 5 #input
+TRIG3 = 19 #output
+ECHO3 = 13 #input
 
 
 def getRNETjoystickFrameID(can_socket):
@@ -59,39 +59,44 @@ def initializeUltrasonicSensors(gpio_in, gpio_out):
     time.sleep(1)
 
 
-def getDistance(gpio_in, gpio_out, ultrasound):
+def getDistance(echo, trig):
     global distance1
     global distance2
     global distance3
-    GPIO.output(gpio_out, True)
+    GPIO.output(trig, True)
     time.sleep(0.00001)
-    GPIO.output(gpio_out, False)
-    while GPIO.input(gpio_in)==0:
+    GPIO.output(trig, False)
+    while GPIO.input(echo)==0:
         pulse_start = time.time()
 
-    while GPIO.input(gpio_in)==1:
+    while GPIO.input(echo)==1:
         pulse_end = time.time()
 
     pulse_duration = pulse_end - pulse_start
     distance = pulse_duration * 17150
 
     distance = round(distance, 2)
-    if (ultrasound == 1):
+    if (echo == ECHO1):
         distance1 = round(distance, 2)
         #print("Distance1: " + str(distance1))
-    elif (ultrasound == 2):
+    elif (echo == ECHO2):
         distance2 = round(distance, 2)
         #print("Distance2: " + str(distance2))
-    elif (ultrasound == 3):
+    elif (echo == ECHO3):
         distance3 = round(distance, 2)
 
     #print("Sensor" + str(ultrasound) + "Distance: " +  ":" + str(distance) + " cm",)
     time.sleep(0.1)
 
 def getDistances():
-    print("getDistances")
-    getDistance(ECHO1, TRIG1, 1)
-    print("Distance1: " + str(distance1))
+    while True:
+        getDistance(ECHO1, TRIG1)
+        getDistance(ECHO2, TRIG2)
+        getDistance(ECHO3, TRIG3)
+        print("Distance1: " + str(distance1))
+        print("Distance2: " + str(distance2))
+        print("Distance3: " + str(distance3))
+        time.sleep(0.5)
 
 def stopWheelchair():
    global joystick_x
@@ -197,8 +202,8 @@ if __name__ == "__main__":
 
     GPIO.setmode(GPIO.BCM)
     initializeUltrasonicSensors(ECHO1, TRIG1)
-    #initializeUltrasonicSensors(ECHO2, TRIG2)
-    #initializeUltrasonicSensors(ECHO3, TRIG3)
+    initializeUltrasonicSensors(ECHO2, TRIG2)
+    initializeUltrasonicSensors(ECHO3, TRIG3)
 
     can_socket = opencansocket(0)
 
@@ -233,8 +238,11 @@ if __name__ == "__main__":
     else:
         print('Manual override mode enabled')
         control_thread = threading.Thread(target=manualOverride, daemon=True)
+        sensors_thread = threading.Thread(target=getDistances, daemon=True)
+        
 
     control_thread.start()
+    sensors_thread.start()
 
     while rnet_threads_running:
         time.sleep(0.5)
