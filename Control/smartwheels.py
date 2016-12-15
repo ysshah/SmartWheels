@@ -130,6 +130,7 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # Raspberry Pi IP address, AprilTags UDP port
     sock.bind(('172.20.10.5', 7709))
+    lastSeenTime = time.time()
     while True:
         obstacleLeft = obstacleBooleans[0].value
         obstacleCenter = obstacleBooleans[1].value
@@ -174,9 +175,14 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
         else:
             data, addr = sock.recvfrom(1024)
             if len(data) == 24:
-                x.value = 0
                 y.value = 0
+                if time.time() - lastSeenTime > 3:
+                    x.value = 50
+                else:
+                    x.value = 0
             elif len(data) == 112:
+                lastSeenTime = time.time()
+
                 d = struct.unpack('!8i20f', data)
 
                 width = max(max(abs(d[11] - d[13]), abs(d[13] - d[15])),
