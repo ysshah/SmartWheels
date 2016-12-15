@@ -93,39 +93,51 @@ def getDistance(echo, trig):
     return distance
 
 
-def updateObstacles(obstaclePresent):
+def updateObstacles(obstacleBooleans):
     bufferSize = 10
     numSensors = 3
 
     GPIO.setmode(GPIO.BCM)
-    echoTrigPairs = [(17, 27), (5, 6), (13, 19)]
+    echoTrigPairs = [(13, 19), (5, 6), (17, 27)]
     for echo, trig in echoTrigPairs:
         initializeUltrasonicSensors(echo, trig)
 
     sensorValues = [[101] * bufferSize for i in range(numSensors)]
     while True:
-        obstacles = False
         for i in range(numSensors):
             sensorValues[i].pop(0)
             sensorValues[i].append(getDistance(*echoTrigPairs[i]))
             average = sum(sensorValues[i]) / bufferSize
-            if average < 80:
-                obstacles = True
-                break
-        obstaclePresent.value = obstacles
+            obstacleBooleans[i].value = (average < 80)
 
 
-def changeValuesByTime(x, y, obstaclePresent):
-    while True:
-        if obstaclePresent.value:
-            y.value = 0
-        else:
-            y.value = 50
-    # y.value = 155
-    # time.sleep(3)
+def turnLeft(x, y):
+    print('Maneuver: Turning left')
+    x.value = 255 - 100
+    y.value = 0
+    time.sleep(2)
+    x.value = 0
+    y.value = 100
+    time.sleep(2)
+    x.value = 100
+    y.value = 0
+    time.sleep(2)
 
 
-def setJoysticksFromApriltag(x, y, obstaclePresent):
+def turnRight(x, y):
+    print('Maneuver: Turning right')
+    x.value = 100
+    y.value = 0
+    time.sleep(2)
+    x.value = 0
+    y.value = 100
+    time.sleep(2)
+    x.value = 255 - 100
+    y.value = 0
+    time.sleep(2)
+
+
+def setJoysticksFromApriltag(x, y, obstacleBooleans):
     resolution = (1920, 1080)
     x_center = resolution[0] / 2
     x_scale = resolution[1] / 2
@@ -134,30 +146,69 @@ def setJoysticksFromApriltag(x, y, obstaclePresent):
     # Raspberry Pi IP address, AprilTags UDP port
     sock.bind(('172.20.10.5', 7709))
     while True:
-        if obstaclePresent.value:
-            x.value = 0
-            y.value = 0
+        obstacleLeft = obstacleBooleans[0].value
+        obstacleCenter = obstacleBooleans[1].value
+        obstacleRight = obstacleBooleans[2].value
+        # print('Obstacle Left: {}  |  Obstacle Center: {}  |  Obstacle Right: {}'.format(
+        #     obstacleLeft, obstacleCenter, obstacleRight))
+
+        # Obstacle left => turn right
+        if obstacleLeft and not obstacleRight:
+            print('Obstacle on left and NOT right')
+            turnRight(x, y)
+
+        # Obstacle right => turn left
+        elif obstacleRight and not obstacleLeft:
+            print('Obstacle on right and NOT left')
+            turnLeft(x, y)
+
+        # Obstacle center but not right => turn right
+        elif obstacleCenter and not obstacleRight:
+            print('Obstacle on center and NOT right')
+            turnRight(x, y)
+
+        # Obstacle center but not left => turn left
+        elif obstacleCenter and not obstacleLeft:
+            print('Obstacle on center and NOT left')
+            turnLeft(x, y)
+
+        elif obstacleCenter:
+            print('Obstacles all around')
+            obstacleLeft = obstacleBooleans[0].value
+            obstacleRight = obstacleBooleans[2].value
+            while obstacleLeft and obstacleRight:
+                print('Obstacles on both sides... in loop')
+                y.value = 255 - 100
+                time.sleep(1)
+                obstacleLeft = obstacleBooleans[0].value
+                obstacleRight = obstacleBooleans[2].value
+            print('Leaving loop')
+            if obstacleLeft:
+                turnRight(x, y)
+            else:
+                turnLeft(x, y)
+
         else:
             data, addr = sock.recvfrom(1024)
             if len(data) == 24:
-                print('No tags')
+                # print('No tags')
                 x.value = 0
                 y.value = 0
             elif len(data) == 112:
                 d = struct.unpack('!8i20f', data)
 
-                print('Corners: ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f})'.format(*d[11:19]))
+                # print('Corners: ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f}); ({:4.0f},{:4.0f})'.format(*d[11:19]))
                 width = max(max(abs(d[11] - d[13]), abs(d[13] - d[15])),
                             max(abs(d[15] - d[17]), abs(d[17] - d[11])))
                 height = max(max(abs(d[12] - d[14]), abs(d[14] - d[16])),
                             max(abs(d[16] - d[18]), abs(d[18] - d[12])))
                 size = max(width, height)
-                print('X: {:4.0f}, Y: {:4.0f}, SIZE: {:4.0f}'.format(d[9], d[10], size))
-                print('Calculated distance: {:3.2f} m; {:3.2f} ft'.format(
-                    285 / size, 3.28084 * 285 / size))
+                # print('X: {:4.0f}, Y: {:4.0f}, SIZE: {:4.0f}'.format(d[9], d[10], size))
+                # print('Calculated distance: {:3.2f} m; {:3.2f} ft'.format(
+                #     285 / size, 3.28084 * 285 / size))
 
                 if size < 300:
-                    print('going forward')
+                    # print('going forward')
                     y.value = 50
                     x_val = d[9]
                     if x_val >= x_center:
@@ -165,11 +216,11 @@ def setJoysticksFromApriltag(x, y, obstaclePresent):
                     else:
                         x.value = 255 - int((x_center - x_val) * (80 / x_scale))
                 elif size < 400:
-                    print('stopping')
+                    # print('stopping')
                     x.value = 0
                     y.value = 0
                 else:
-                    print('going backwards')
+                    # print('going backwards')
                     y.value = 255 - 50
 
 
@@ -211,12 +262,13 @@ if __name__ == "__main__":
 
     x = Value('i', 0)
     y = Value('i', 0)
-    obstaclePresent = Value('b', False)
+    obstacleBooleans = (Value('b', False), Value('b', False), Value('b', False))
 
     # p1 = Process(target=changeValuesByTime, args=(x, y, obstaclePresent))
-    p1 = Process(target=setJoysticksFromApriltag, args=(x, y, obstaclePresent))
+    p1 = Process(target=setJoysticksFromApriltag,
+        args=(x, y, obstacleBooleans))
     p2 = Process(target=sendJoystickValuesJSMerror, args=(x, y))
-    p3 = Process(target=updateObstacles, args=(obstaclePresent,))
+    p3 = Process(target=updateObstacles, args=(obstacleBooleans,))
 
     p1.start()
     p2.start()
