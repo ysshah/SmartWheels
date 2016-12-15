@@ -1,4 +1,5 @@
 import select
+import argparse
 import time
 import RPi.GPIO as GPIO
 from multiprocessing import Process, Value
@@ -131,6 +132,9 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
     # Raspberry Pi IP address, AprilTags UDP port
     sock.bind(('172.20.10.5', 7709))
     lastSeenTime = time.time()
+
+    # 0 = left, 1 = right
+    lastSeenDirection = 0
     while True:
         obstacleLeft = obstacleBooleans[0].value
         obstacleCenter = obstacleBooleans[1].value
@@ -177,7 +181,10 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
             if len(data) == 24:
                 y.value = 0
                 if time.time() - lastSeenTime > 3:
-                    x.value = 50
+                    if lastSeenDirection == 1:
+                        x.value = 50
+                    else:
+                        x.value = 255 - 50
                 else:
                     x.value = 0
             elif len(data) == 112:
@@ -197,8 +204,10 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
                     x_val = d[9]
                     if x_val >= x_center:
                         x.value = int((x_val - x_center) * (80 / x_scale))
+                        lastSeenDirection = 1
                     else:
                         x.value = 255 - int((x_center - x_val) * (80 / x_scale))
+                        lastSeenDirection = 0
                 elif distanceToAprilTag > 0.85:
                     x.value = 0
                     y.value = 0
@@ -208,16 +217,25 @@ def setJoysticksFromApriltag(x, y, obstacleBooleans):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-f', '--follow', action='store_true',
+        help='Follow AprilTag only, no obstacle avoidance')
+    args = parser.parse_args()
+
     x = Value('i', 0)
     y = Value('i', 0)
     obstacleBooleans = (
         Value('b', False), Value('b', False), Value('b', False)
     )
 
-    obstacleProcess = Process(target=updateObstacles,
-        args=(obstacleBooleans,))
-    obstacleProcess.start()
-    time.sleep(3)
+    if args.follow:
+        print('Follow only mode activated - obstacle avoidance OFF.')
+    else:
+        obstacleProcess = Process(target=updateObstacles,
+            args=(obstacleBooleans,))
+        obstacleProcess.start()
+        time.sleep(3)
+        print('Obstacle avoidance ON.')
 
     sendJoystickValuesProcess = Process(target=sendJoystickValuesJSMerror,
         args=(x, y))
@@ -227,6 +245,5 @@ if __name__ == "__main__":
         args=(x, y, obstacleBooleans))
     setJoystickProcess.start()
 
-    obstacleProcess.join()
     sendJoystickValuesProcess.join()
     setJoystickProcess.join()
