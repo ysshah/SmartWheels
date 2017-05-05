@@ -38,10 +38,11 @@ def update_line(num, iterator, points, line):
 
         labels[i] = clusterNum
 
-    # If the last distance < WIDTH, the last cluster is same as first
+    # If the first cluster label is 0, the distance between the first and last
+    # data point was less than the width, so they should be in the same cluster
     # (since we have wrapped all the way around 360 degrees)
-    if d < WIDTH:
-        labels[labels == clusterNum] = labels[0]
+    if labels[0] == 0:
+        labels[labels == clusterNum] = 0
     # ----------------------------------------------------------------------- #
 
     # ----------------------------------------------------------------------- #
@@ -54,7 +55,7 @@ def update_line(num, iterator, points, line):
 
     if y[icenter] < 5:
         # If the point is less than 5 meters away, get the label of its cluster
-        clusterBools = labels == labels[i]
+        clusterBools = labels == labels[icenter]
 
         # Get the data point indices at which that cluster starts and ends, aka
         # the edges of that cluster. There should be two.
@@ -63,7 +64,9 @@ def update_line(num, iterator, points, line):
             # Draw a line from (0,0) to the right edge of the cluster. In the
             # future, this should probably compute whichever edge requires less
             # of a turn.
-            ileft, iright = changes
+            iright = changes[0]
+            ileft = changes[1] + 1
+            # if angle[ileft] < angle[iright]:
             line.set_data([0, x[iright]], [0, y[iright]])
     else:
         line.set_data([0, 0], [0, y[icenter]])
@@ -88,7 +91,7 @@ def run():
 
     fig, ax = plt.subplots(figsize=(8,8))
     ax.axis('scaled')
-    ax.axis([10, -10, -10, 10])
+    ax.axis([-10, 10, -10, 10])
     ax.grid(True)
 
     iterator = lidar.iter_scans()
@@ -101,8 +104,9 @@ def run():
     plt.show()
 
     lidar.stop()
-    lidar.clear_input()
     lidar.stop_motor()
+    lidar._serial_port.reset_input_buffer()
+    lidar._serial_port.reset_output_buffer()
     lidar.disconnect()
 
 
